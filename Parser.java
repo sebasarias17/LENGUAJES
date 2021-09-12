@@ -2,10 +2,6 @@
 	By: Carmen Carvajal
 	Parser Class: this class verifies the source file syntax according to the grammar
 **/
-import java.util.*;
-import java.util.concurrent.locks.Condition;
-import java.lang.*;
-import java.beans.Expression;
 import java.io.*;
 
 public class Parser{
@@ -174,13 +170,22 @@ public class Parser{
 			r=true;			
 		}
 		else if (lexer.getCurrentToken().code==Lexer.ASSIGN){
-			assign();
+			recognize(Lexer.VARIABLE);
+			recognize(Lexer.ASSIGN);
+			expresion();
 			System.out.println("call function ok!");
 			r=true;
 		}
 		else if (lexer.getCurrentToken().code==Lexer.IF){
-			ifstatement();
+			recognize(Lexer.IF);
+			recognize(Lexer.LPAREN);
+			condition();
+			recognize(Lexer.RPAREN);
+			statementList();
 			recognize(Lexer.ENDIF);
+			if (lexer.getCurrentToken().code == Lexer.ELSE){
+				statementList();
+			}
 			System.out.println("call function ok!");
 			r = true;
 		}
@@ -216,6 +221,11 @@ public class Parser{
 	*/
 	public void expresion(){
 		term();
+		
+		while (lexer.getCurrentToken().code != Lexer.RPAREN)
+			recognize(Lexer.ADD);
+		term();
+		
 	}
 
 	/**
@@ -223,15 +233,23 @@ public class Parser{
 	*/
 	public void term(){
 		factor();
+		while (lexer.getCurrentToken().code != Lexer.RPAREN)
+			recognize(Lexer.MULT);
+		factor();
 	}
 	
 	/**
 		Function <factor>
 	 */
 	public void factor(){
+		recognize(Lexer.LPAREN);
 		expresion();
-		recognize(Lexer.VARIABLE);
-		recognize(Lexer.CONSTANT);
+		recognize(Lexer.RPAREN);
+		if (lexer.getCurrentToken().code == Lexer.VARIABLE){
+			recognize(Lexer.VARIABLE);
+		}else if(lexer.getCurrentToken().code == Lexer.CONSTANT){
+			recognize(Lexer.CONSTANT);
+		}
 	} 
 	/**
 		Function <condition>;
@@ -254,8 +272,6 @@ public class Parser{
 		recognize(Lexer.RPAREN);
 		statementList();
 		recognize(Lexer.ENDIF);
-		recognize(Lexer.ELSE);
-		statementList();
 		}
 
 	/**
@@ -278,12 +294,48 @@ public class Parser{
 		recognize(Lexer.ASSIGN);
 		expresion();
 	}
+	
 	/**
 		Function recognizeVariable: verifies for variables
-	
-	**/
+	*/
 	public void recognizeVariable(){
 		recognize(Lexer.VARIABLE);
+	}
+	/**
+		Function <letter>
+	 */
+	public void letter(){
+		for (int i = 0; i < token.text.length();i++){
+			char a = token.text.charAt(i);
+			if(!(a >= 'a' && a <= 'z')){
+				recognize(Lexer.VARIABLE);
+			}
+		}
+	}
+
+	/**
+	Function<var>
+	 */
+	public void variable(){
+		letter();
+	}
+
+	/**
+	Function<cons>
+	 */
+	public void cons(){
+		digit();
+	}
+	/**
+	function <digit>
+	 */
+	public void digit(){
+		for (int i = 0; i < token.text.length();i++){
+			char a = token.text.charAt(i);
+			if((a >= '0' && a <= '9')){
+                recognize(Lexer.CONSTANT);
+            }
+		}
 	}
 	
 	
