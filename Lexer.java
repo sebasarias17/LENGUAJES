@@ -32,6 +32,7 @@ public class Lexer{
 	public static final int DEQUALS = 19;
 	public static final int ADD = 20;
 	public static final int MULT = 21;
+	public static final int ENDWHILE = 22;
 	public static final int INVALIDTOKEN=98;
 	public static final int EOF = 99;
 
@@ -94,6 +95,7 @@ public class Lexer{
 		keywordsTable.add(new Token(PRINT, "print", 0));
 		keywordsTable.add(new Token(CALL, "call", 0));
 		keywordsTable.add(new Token(WHILE,"while", 0));//MODIFICADO POR ESTUDIANTES
+		keywordsTable.add(new Token(ENDWHILE,"endwhile",0));//MODIFICADO POR ESTUDIANTES
 		keywordsTable.add(new Token(ADD, "+", 0));//MODIFICADO POR ESTUDIANTES
 		keywordsTable.add(new Token(MULT, "*",0));//MODIFICADO POR ESTUDIANTES
 		keywordsTable.add(new Token(INVALIDTOKEN,"$",0));//MODIFICADO POR ESTUDIANTES
