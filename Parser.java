@@ -4,6 +4,8 @@
 **/
 import java.io.*;
 
+import javax.swing.plaf.basic.BasicTreeUI.TreeCancelEditingAction;
+
 public class Parser{
 	//token: (Token) used to process each token in the source code
 	private Token token;
@@ -88,7 +90,10 @@ public class Parser{
 		//checks for "def"
 		recognize(Lexer.DEF);
 		//checks for <variable>
-		recognizeVariable();
+		if(!variable()){
+			token.code = Lexer.INVALIDTOKEN;
+		}
+		recognize(Lexer.VARIABLE);
 		//checks for "("
 		recognize(Lexer.LPAREN);
 		//verifies if there are parameters
@@ -122,6 +127,9 @@ public class Parser{
 	**/
 	public void varDef(){
 		recognize(Lexer.INT);
+		if(!variable()){
+			token.code = Lexer.INVALIDTOKEN;
+		}
 		recognize(Lexer.VARIABLE);
 	}
 	/**
@@ -143,12 +151,18 @@ public class Parser{
 		//checks for read <variable>
 		if (lexer.getCurrentToken().code == Lexer.READ){
 			recognize(Lexer.READ);
+			if(!variable()){
+				token.code = Lexer.INVALIDTOKEN;
+			}
 			recognize(Lexer.VARIABLE);
 			System.out.println("Read ok!");
 			r=true;
 		} //checks for print <variable>
 		else if (lexer.getCurrentToken().code == Lexer.PRINT){
 			recognize(Lexer.PRINT);
+			if(!variable()){
+				token.code = Lexer.INVALIDTOKEN;
+			}
 			recognize(Lexer.VARIABLE);
 			System.out.println("Print ok!");
 			r=true;
@@ -157,6 +171,9 @@ public class Parser{
 			//checks for "call"
 			recognize(Lexer.CALL);
 			//checks for <variable>
+			if(!variable()){
+				token.code = Lexer.INVALIDTOKEN;
+			}
 			recognize(Lexer.VARIABLE);
 			//checks for <lparen>
 			recognize(Lexer.LPAREN);
@@ -169,30 +186,20 @@ public class Parser{
 			//verifies if there is an argument list 
 			r=true;			
 		}
-		else if (lexer.getCurrentToken().code==Lexer.ASSIGN){
-			recognize(Lexer.VARIABLE);
-			recognize(Lexer.ASSIGN);
-			expresion();
-			System.out.println("call function ok!");
+		else if (lexer.getCurrentToken().code==Lexer.VARIABLE){
+			assign();			
+			System.out.println("assign function ok!");
 			r=true;
 		}
 		else if (lexer.getCurrentToken().code==Lexer.IF){
-			recognize(Lexer.IF);
-			recognize(Lexer.LPAREN);
-			condition();
-			recognize(Lexer.RPAREN);
-			statementList();
-			recognize(Lexer.ENDIF);
-			if (lexer.getCurrentToken().code == Lexer.ELSE){
-				statementList();
-			}
-			System.out.println("call function ok!");
+			ifStatement();
+			System.out.println("if function ok!");
 			r = true;
 		}
 		else if (lexer.getCurrentToken().code==Lexer.WHILE){
 			While();
-			recognize(Lexer.ENDWHILE);
-			System.out.println("call function ok!");
+			//recognize(Lexer.ENDWHILE); error
+			System.out.println("while function ok!");
 			r = true;
 		}
 		return r;
@@ -213,6 +220,9 @@ public class Parser{
 		Function argumentDef: verifies the production <argumentDef> ::= <variable>
 	**/
 	public void argumentDef(){
+		if(!variable()){
+			token.code = Lexer.INVALIDTOKEN;
+		}
 		recognize(Lexer.VARIABLE);
 	}
 
@@ -220,58 +230,77 @@ public class Parser{
 		Function Expresion
 	*/
 	public void expresion(){
+		//recognize(Lexer.LPAREN);	// cambie esto
 		term();
-		
-		while (lexer.getCurrentToken().code != Lexer.RPAREN)
+		if(lexer.getCurrentToken().code == Lexer.ADD){
 			recognize(Lexer.ADD);
-		term();
-		
+			term();
+		}
+			
+		//recognize(Lexer.RPAREN);
 	}
 
 	/**
 		Function Term
 	*/
 	public void term(){
-		factor();
-		while (lexer.getCurrentToken().code != Lexer.RPAREN)
+		factor();		// cambie esto
+		if (lexer.getCurrentToken().code == Lexer.MULT){
 			recognize(Lexer.MULT);
-		factor();
+			factor();
+		}
+			
 	}
 	
 	/**
 		Function <factor>
 	 */
 	public void factor(){
-		recognize(Lexer.LPAREN);
-		expresion();
-		recognize(Lexer.RPAREN);
-		if (lexer.getCurrentToken().code == Lexer.VARIABLE){
-			recognize(Lexer.VARIABLE);
-		}else if(lexer.getCurrentToken().code == Lexer.CONSTANT){
-			recognize(Lexer.CONSTANT);
+		if(lexer.getCurrentToken().code == Lexer.LPAREN){
+			recognize(Lexer.LPAREN);
+			expresion();
+			recognize(Lexer.RPAREN);
 		}
+		if (lexer.getCurrentToken().code == Lexer.VARIABLE){
+			if (variable()){
+				recognize(Lexer.VARIABLE);
+			}else if(constant()){
+				lexer.getCurrentToken().code = Lexer.CONSTANT;
+				recognize(Lexer.CONSTANT);
+			}else{
+				lexer.getCurrentToken().code = Lexer.INVALIDTOKEN;
+				recognize(Lexer.CONSTANT);
+			}
+		}
+		
 	} 
 	/**
 		Function <condition>;
 	 */
 	public void condition(){
 		expresion();
-		if(lexer.getCurrentToken().code == Lexer.EQUALS||lexer.getCurrentToken().code == Lexer.DEQUALS){
-			expresion();
+		if(lexer.getCurrentToken().code == Lexer.EQUALS){	// Cambié esto
+			recognize(Lexer.EQUALS);
+		}else if(lexer.getCurrentToken().code == Lexer.DEQUALS){
+			recognize(Lexer.DEQUALS);
 		}
-		
+		expresion();
 	}
 	
 	/**
-		Funcition <if statement>
+		Function <if statement>
 	 */
-	public void ifstatement(){
+	public void ifStatement(){
 		recognize(Lexer.IF);
 		recognize(Lexer.LPAREN);
 		condition();
 		recognize(Lexer.RPAREN);
 		statementList();
 		recognize(Lexer.ENDIF);
+		if(lexer.getCurrentToken().code == Lexer.ELSE){
+			recognize(Lexer.ELSE);
+			statementList();
+		}
 		}
 
 	/**
@@ -281,7 +310,7 @@ public class Parser{
 		recognize(Lexer.WHILE);
 		recognize(Lexer.LPAREN);
 		condition();
-		recognize(Lexer.LPAREN);
+		recognize(Lexer.RPAREN);
 		statementList();
 		recognize(Lexer.ENDWHILE);
 	}
@@ -290,6 +319,9 @@ public class Parser{
 		Function <assign>
 	*/
 	public void assign(){
+		if(!variable()){
+			token.code = Lexer.INVALIDTOKEN;
+		}
 		recognize(Lexer.VARIABLE);
 		recognize(Lexer.ASSIGN);
 		expresion();
@@ -298,45 +330,49 @@ public class Parser{
 	/**
 		Function recognizeVariable: verifies for variables
 	*/
-	public void recognizeVariable(){
-		recognize(Lexer.VARIABLE);
+	public boolean variable(){
+		boolean j = true;
+		for (int i = 0; i < token.text.length();i++){
+			if(!letter(token.text.charAt(i))){
+				j = false;
+			}
+		}
+		return j;
+	}
+
+	/**
+		Function recognizeConstant: verifies for constant
+	 */
+	public boolean constant(){
+		boolean t = true;
+		for (int i = 0; i < token.text.length();i++){
+			if(!digit(token.text.charAt(i))){
+				t = false;
+			}
+		}
+		return t;
 	}
 	/**
 		Function <letter>
 	 */
-	public void letter(){
-		for (int i = 0; i < token.text.length();i++){
-			char a = token.text.charAt(i);
-			if(!(a >= 'a' && a <= 'z')){
-				recognize(Lexer.VARIABLE);
-			}
+	public boolean letter(char a){
+		boolean j = true;
+		if(!(a >= 'a' && a <= 'z')){
+			j = false;
 		}
-	}
-
-	/**
-	Function<var>
-	 */
-	public void variable(){
-		letter();
-	}
-
-	/**
-	Function<cons>
-	 */
-	public void cons(){
-		digit();
+		return j;
 	}
 	/**
-	function <digit>
+		Function<digit>
 	 */
-	public void digit(){
-		for (int i = 0; i < token.text.length();i++){
-			char a = token.text.charAt(i);
-			if((a >= '0' && a <= '9')){
-                recognize(Lexer.CONSTANT);
+	public boolean digit(char a){
+		boolean t = true;
+			if(!(a >= '0' && a <= '9')){
+                t = false;
             }
+			return t;
 		}
-	}
+	
 	
 	
 	public static void main(String args[])
